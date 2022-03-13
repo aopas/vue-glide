@@ -97,11 +97,11 @@ export default {
     },
     breakpoints: {
       type: Object,
-      default: () => {}
+      default: () => { }
     },
     classes: {
       type: Object,
-      default: () => {}
+      default: () => { }
     },
     throttle: {
       type: Number,
@@ -117,7 +117,7 @@ export default {
     },
     options: {
       type: Object,
-      default: () => {}
+      default: () => { }
     },
     active: {
       type: Number,
@@ -125,13 +125,13 @@ export default {
     }
   },
 
-  data () {
+  data() {
     return {
       glide: undefined
     }
   },
 
-  render (h) {
+  render(h) {
     let control
     let bullet
     let buttons = []
@@ -176,23 +176,23 @@ export default {
   },
 
   watch: {
-    active () {
+    active() {
       this.changeSlideByModel()
     }
   },
 
   computed: {
-    currentSlide () {
+    currentSlide() {
       return this.glide.index
     },
-    slidesCount () {
+    slidesCount() {
       return this.$slots.default.filter(
         c => c.componentOptions && isVueGlideSlideTag(c.componentOptions.tag)
       ).length
     }
   },
 
-  mounted () {
+  mounted() {
     this.init()
   },
 
@@ -200,7 +200,7 @@ export default {
     /**
      * Initialization glide
      */
-    init () {
+    init() {
       const defaultClasses = {
         direction: {
           ltr: 'glide--ltr',
@@ -245,20 +245,20 @@ export default {
      * * >> - Rewinds to end (last slide)
      * * << - Rewinds to start (first slide)
      */
-    go (pattern) {
+    go(pattern) {
       this.glide.go(pattern)
     },
     /**
      * Go to the slide by click on slide
      */
-    goToSlideByClick () {
+    goToSlideByClick() {
       this.$on('glide:slide-click', e => this.go(`=${e}`))
     },
     /**
      * Pass glide events to Vue events
      * @param {array} - glide events
      */
-    eventConnector (events) {
+    eventConnector(events) {
       events.map(event => {
         this.glide.on(event, e => {
           const emitter = event.replace(/\./, '-')
@@ -269,7 +269,7 @@ export default {
     /**
      * Bind v-model
      */
-    bindModel () {
+    bindModel() {
       this.$on('glide:move', () => {
         this.$emit('change', this.currentSlide)
       })
@@ -277,7 +277,7 @@ export default {
     /**
      * Change slide by v-model
      */
-    changeSlideByModel () {
+    changeSlideByModel() {
       if (this.active === null) return
       if (this.active > this.slidesCount - 1) {
         return this.go(`=${this.slidesCount - 1}`)
@@ -292,13 +292,36 @@ export default {
      * When type is 'carousel', glide.js clones DOM slides
      * @returns {number} - index of slide
      */
-    addEventListenerToSlide () {
+    addEventListenerToSlide() {
       let slides = document.querySelectorAll('.glide__slide')
 
       slides = Array.from(slides)
 
       slides.forEach(el => {
         el.addEventListener('click', e => {
+          // Recursive bubbling from nested elements to find '.glide__slide'
+          const recursive = el => {
+            const parent = el.parentNode
+            const contain = parent.classList.contains('glide__slide')
+            if (contain) {
+              return this.$emit(
+                'glide:slide-click',
+                Number(parent.dataset.glideIndex)
+              )
+            } else {
+              recursive(parent)
+            }
+          }
+
+          if (!e.target.classList.contains('glide__slide')) {
+            recursive(e.target)
+          }
+
+          this.$emit('glide:slide-click', Number(e.target.dataset.glideIndex))
+        })
+      })
+      slides.forEach(el => {
+        el.addEventListener('touchstart', e => {
           // Recursive bubbling from nested elements to find '.glide__slide'
           const recursive = el => {
             const parent = el.parentNode
